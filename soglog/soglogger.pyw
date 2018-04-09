@@ -12,7 +12,7 @@ from ctypes import Structure, windll, c_uint, sizeof, byref
 
 ## Globals
 IDLE_TIMEOUT = 10 # Idle duration in seconds before 'Idle' is logged instead of the active window
-VERSION = "1.04"
+VERSION = "1.05"
 
 class soglog:
 	def __init__(self, root):
@@ -163,7 +163,6 @@ class RepeatTimer():
 			try:
 				# find active window and increment its count
 				self.app.totalticks += 1
-				
 				windowname = win32gui.GetWindowText(win32gui.GetForegroundWindow())
 				windowname = self.filter(windowname)
 				if windowname == '':
@@ -178,46 +177,51 @@ class RepeatTimer():
 			
 			except Exception as e:
 				#print 'Exception : %s' % e
+				self.showMessage(e)
 				self.stop()
 				return
 	
 			self.app.root.after(500, self.update)
 			
 	# Some manipulations of the actual window names in order to get more meaningful entries
-	def filter(self,windowname):
-		windowname = windowname.replace('*', '')
-		
+	def filter(self, windowname):
+		windowname = windowname.replace('*', '').lower()
 		# Common browsers
 		if re.search(r'chrome|firefox|safari|internet explorer|opera', windowname, re.I): 
-			if 'Facebook' in windowname:
-				return 'Facebook'
-			if 'Stack Overflow' in windowname:
-				return "StackOverflow"
+			result = self.simpleChecks(windowname, ["Facebook", "Wikipedia",  "Reddit", "StackOverflow", "Calendar", "Asana", "Slack", "Gmail"])
+			if result:
+				return result
+			m = re.search(r'@(\w+).com - (\w+ )mail', windowname)
+			if m:
+				return m.groups()[1].capitalize() + " Mail"
 			if re.search(r'forum', windowname, re.I):
 				return 'Forums'
 			if '- MATLAB' in windowname:
 				return 'Matlab documentation'
-			if re.search(r'Python.*documentation', windowname):
+			if re.search(r'Python.*documentation', windowname, re.I):
 				return 'Python documentation'
-			if 'Wikipedia,' in windowname:
-				return 'Wikipedia'
-			if '@gmail.com - Gmail' in windowname:
-				return 'Gmail'
+			if re.search("nos.nl|cnn|bbc|jazeera", windowname):
+				return "News"
 			return 'Misc. Internet'
 			
+		# Desktop applications
+		result = self.simpleChecks(windowname, ["Unity", "Visual Studio", "GitHub", "Gramps", "Spotify", "Notepad++", "PuTTy", "Console"])
+		if result: 
+			return result
+			
 		# Matlab subwindows
-		if re.search(r'Editor.*\.m$', windowname):
+		if re.search(r'Editor.*\.m$', windowname, re.I):
 			return 'Matlab Editor'
-		if re.search(r'Figure \d', windowname):
+		if re.search(r'Figure \d', windowname, re.I):
 			return 'Matlab Figures'
 		
 		# PuTTy variations
 		if 'PuTTy' in windowname:
 			return 'PuTTy'
-		if re.search(r'\[screen \d', windowname):
+		if re.search(r'\[screen \d', windowname, re.I):
 			return 'PuTTy'
 			
-		# 'Filename - Program' --> Program
+		# General case 'Filename - Program' --> Program
 		if '-' in windowname:
 			windowname = windowname.split('-')[-1]
 			
@@ -233,6 +237,16 @@ class RepeatTimer():
 			windowname = "Idle"
 		
 		return windowname.strip()
+		
+	def simpleChecks(self, windowname, checks):			
+		for check in checks:
+			if check.lower() in windowname:
+				return check
+				
+	def showMessage(self, msg):
+		toplevel = Tkinter.Toplevel()
+		label = Tkinter.Label(toplevel, text=msg, height=0, width=36)
+		label.pack()
 	
 	def stop(self):
 		if self.running: 
@@ -254,7 +268,8 @@ def getIdleDuration():
 	return millis / 1000.0
 
 if __name__ == "__main__":
-	if __file__ != None:
+	dir = os.path.dirname(__file__)
+	if dir != "":
 		os.chdir(os.path.dirname(__file__))
 	root = Tkinter.Tk()
 	app = soglog(root)
