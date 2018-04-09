@@ -6,23 +6,23 @@ import win32process, win32security, win32api, win32gui, win32con
 import Tkinter
 import re
 import time
+import os
 import datetime
 from ctypes import Structure, windll, c_uint, sizeof, byref
 
 ## Globals
 IDLE_TIMEOUT = 10 # Idle duration in seconds before 'Idle' is logged instead of the active window
-VERSION = "1.03"
+VERSION = "1.04"
 
 class soglog:
 	def __init__(self, root):
-		self.recording = False
+		self.started = False
 		self.root = root
 		self.log = {}
 		self.totalticks = 0
 		self.totalTime = 0
-		self.startTime = None
-		self.timer = RepeatTimer(self)
-		self.started = False
+		self.startTime = time.time()
+		self.timer = RepeatTimer(self)		
 		
 		# initialize buttons
 		buttonWidth = 16
@@ -254,6 +254,8 @@ def getIdleDuration():
 	return millis / 1000.0
 
 if __name__ == "__main__":
+	if __file__ != None:
+		os.chdir(os.path.dirname(__file__))
 	root = Tkinter.Tk()
 	app = soglog(root)
 	root.title("Soglog "+VERSION)
