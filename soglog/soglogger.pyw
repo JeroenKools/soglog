@@ -188,14 +188,22 @@ class RepeatTimer():
 		windowname = windowname.replace('*', '').lower()
 		# Common browsers
 		if re.search(r'chrome|firefox|safari|internet explorer|opera', windowname, re.I): 
-			result = self.simpleChecks(windowname, ["Facebook", "Wikipedia",  "Reddit", "StackOverflow", "Calendar", "Asana", "Slack", "Gmail"])
+			result = self.simpleChecks(windowname, [
+					"Facebook", "Wikipedia",  "Reddit", "StackOverflow", 
+					"Calendar", "Asana", "Slack", "Gmail", "NeuroPlus",
+					"Google Play", "iTunes Connect"])
 			if result:
 				return result
+				
+			# Gmail & Google apps mail
 			m = re.search(r'@(\w+).com - (\w+ )mail', windowname)
 			if m:
 				return m.groups()[1].capitalize() + " Mail"
+				
 			if re.search(r'forum', windowname, re.I):
 				return 'Forums'
+			if "neuroplus/" in windowname:
+				return "GitHub"
 			if '- MATLAB' in windowname:
 				return 'Matlab documentation'
 			if re.search(r'Python.*documentation', windowname, re.I):
@@ -236,7 +244,7 @@ class RepeatTimer():
 		if getIdleDuration() > IDLE_TIMEOUT:
 			windowname = "Idle"
 		
-		return windowname.strip()
+		return windowname.strip().capitalize()
 		
 	def simpleChecks(self, windowname, checks):			
 		for check in checks:
